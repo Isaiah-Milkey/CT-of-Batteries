@@ -34,7 +34,6 @@ csv_files = [
 battery_data = load_and_merge_data(csv_files)
 
 
-
 #2) Feature Scaling
 scaler = StandardScaler()
 scaled_features = scaler.fit_transform(battery_data)
@@ -68,10 +67,18 @@ for i in range(min(2, len(pca_columns))):
     plt.show()
 
 
-#4) Define Known Batches as described in the battery dataset paper
-batch_categories = pd.Series('Normal Batch (1, 2, 4, 5)', index=pca_df.index)
-batch_categories.loc[261 <= battery_data.index.str.split('-').str[1].astype(int)] = 'Box 3 (Cells 261-390)'
-batch_categories.loc[391 <= battery_data.index.str.split('-').str[1].astype(int)] = 'Separately Shipped (Cells 391-500)'
+#4) Define Known Batches based on Box assignments
+batch_categories = pd.Series(index=pca_df.index, dtype=str)
+
+# Convert Index to Series for proper operations
+cell_numbers = pd.Series(battery_data.index.str.split('-').str[1].astype(int), index=battery_data.index)
+
+batch_categories[cell_numbers.between(1,130)] = 'Box 1 (Cells 1-130)'
+batch_categories[cell_numbers.between(131,260)] = 'Box 2 (Cells 131-260)'
+batch_categories[cell_numbers.between(261,390)] = 'Box 3 (Cells 261-390)'
+batch_categories[cell_numbers.between(391,400)] = 'Small Plastic Holders (Cells 391-400)'
+batch_categories[cell_numbers.between(401,450)] = 'Box 4 (Cells 401-450)'
+batch_categories[cell_numbers.between(451,500)] = 'Box 5 (Cells 451-500)'
 
 pca_df['Batch_Category'] = batch_categories
 
@@ -124,7 +131,7 @@ sns.scatterplot(x='PC_1', y='PC_2', hue='Best_Cluster', data=pca_df, palette='vi
 plt.title(f"K-Means Clustering (K={best_k})")
 plt.xlabel("PC1")
 plt.ylabel("PC2")
-plt.legend(title="Cluster", loc='upper right')
+plt.legend(title="Cluster", loc='upper left')
 
 #Known batches
 plt.subplot(1,2,2)
@@ -132,7 +139,7 @@ sns.scatterplot(x='PC_1', y='PC_2', hue='Batch_Category', data=pca_df, palette='
 plt.title("Known Manufacturing Batches")
 plt.xlabel("PC1")
 plt.ylabel("PC2")
-plt.legend(title="Batch", loc='upper right')
+plt.legend(title="Batch", loc='upper left')
 
 plt.tight_layout()
 plt.show()
@@ -155,4 +162,3 @@ for cluster in feature_deviation.index:
 top_features_df = pd.DataFrame.from_dict(top_features_per_cluster, orient='index', columns=[f"Feature_{i+1}" for i in range(5)])
 print("\nSummary Table of Top Features per Cluster:")
 print(top_features_df)
-
