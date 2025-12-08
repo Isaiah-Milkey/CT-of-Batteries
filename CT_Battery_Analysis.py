@@ -46,25 +46,47 @@ principal_components = pca.fit_transform(scaled_features)
 pca_columns = [f"PC_{i+1}" for i in range(pca.n_components_)]
 pca_df = pd.DataFrame(principal_components, columns=pca_columns, index=battery_data.index)
 
-#Explained variance plot (scree plot)
-plt.figure(figsize=(8,4))
-plt.bar(range(1, len(pca.explained_variance_ratio_)+1),
-        pca.explained_variance_ratio_*100)
+# Explained variance plot (scree plot)
+plt.figure(figsize=(8, 4))
+values = pca.explained_variance_ratio_ * 100
+bars = plt.bar(range(1, len(values) + 1), values)
+
+# Add value labels above each bar
+for i, v in enumerate(values):
+    plt.text(i + 1, v + 0.5, f"{v:.2f}%", ha='center', fontsize=9)
+
 plt.xlabel("Principal Component")
 plt.ylabel("Variance Explained (%)")
+plt.ylim(0, 40)
 plt.title("Scree Plot of PCA")
 plt.tight_layout()
 plt.show()
 
-#PCA loadings for top features
-loadings = pd.DataFrame(pca.components_.T, index=battery_data.columns, columns=pca_columns)
+
+# PCA loadings for top features
+loadings = pd.DataFrame(pca.components_.T, 
+                        index=battery_data.columns, 
+                        columns=pca_columns)
+
 for i in range(min(2, len(pca_columns))):
-    plt.figure(figsize=(10,4))
-    loadings[f'PC_{i+1}'].abs().sort_values(ascending=False).head(10).plot(kind='bar')
+    plt.figure(figsize=(10, 4))
+    #Select the top 10 absolute loadings for this PC
+    pc_values = loadings[f'PC_{i+1}'].abs().sort_values(ascending=False).head(10)
+    
+    ax = pc_values.plot(kind='bar')
+
+    #Add value labels above bars
+    for idx, v in enumerate(pc_values):
+        ax.text(idx, v + 0.005, f"{v:.3f}", 
+                ha='center', va='bottom', fontsize=9)
+
+    plt.xticks(rotation=45, ha='right') 
     plt.ylabel("Absolute Loading")
+    plt.ylim(0, .5)
     plt.title(f"Top Features Contributing to PC_{i+1}")
     plt.tight_layout()
     plt.show()
+
 
 
 #4) Define Known Batches based on Box assignments
@@ -96,6 +118,7 @@ for k in candidate_ks:
     kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
     labels = kmeans.fit_predict(pcs_for_clustering)
     ari = adjusted_rand_score(pca_df['Batch_Category'], labels)
+    print(f"{k} Clusters ARI: {ari}\n")
     if ari > best_ari:
         best_ari = ari
         best_k = k
