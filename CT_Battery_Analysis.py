@@ -8,6 +8,12 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score, silhouette_score
 
+# Add these lines at the top to show all columns
+pd.set_option('display.max_columns', None)  # Show all columns
+pd.set_option('display.width', None)        # Auto-detect width
+pd.set_option('display.max_colwidth', None) # Show full column content
+
+
 #1) Load and Prepare Data
 def load_and_merge_data(csv_paths):
     #Load multiple CSV files, pivot metrics, and merge into a single DataFrame from the battery data
